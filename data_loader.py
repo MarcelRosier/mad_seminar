@@ -9,7 +9,6 @@ from torchvision import transforms
 
 
 class TrainDataset(Dataset):
-
     def __init__(self, data: List[str], target_size=(128, 128)):
         """
         Loads images from data
@@ -28,7 +27,7 @@ class TrainDataset(Dataset):
 
     def __getitem__(self, idx):
         # Load image
-        img = Image.open(self.data[idx]).convert('L')
+        img = Image.open(self.data[idx]).convert("L")
         # Pad to square
         img = transforms.Pad(((img.height - img.width) // 2, 0), fill=0)(img)
         # Resize
@@ -55,38 +54,50 @@ class TrainDataModule(pl.LightningDataModule):
         self.target_size = target_size
         self.batch_size = batch_size
 
-        train_csv_ixi = os.path.join(split_dir, 'ixi_normal_train.csv')
-        train_csv_fastMRI = os.path.join(split_dir, 'normal_train.csv')
-        val_csv = os.path.join(split_dir, 'normal_val.csv')
+        train_csv_ixi = os.path.join(split_dir, "ixi_normal_train.csv")
+        train_csv_fastMRI = os.path.join(split_dir, "normal_train.csv")
+        val_csv = os.path.join(split_dir, "normal_val.csv")
 
         # Load csv files
-        train_files_ixi = pd.read_csv(train_csv_ixi)['filename'].tolist()
-        train_files_fastMRI = pd.read_csv(train_csv_fastMRI)['filename'].tolist()
-        val_files = pd.read_csv(val_csv)['filename'].tolist()
+        train_files_ixi = pd.read_csv(train_csv_ixi)["filename"].tolist()
+        train_files_fastMRI = pd.read_csv(train_csv_fastMRI)["filename"].tolist()
+        val_files = pd.read_csv(val_csv)["filename"].tolist()
 
         # Combine files
         self.train_data = train_files_ixi + train_files_fastMRI
         self.val_data = val_files
 
+        # print(f"{self.train_data}")
+        # print(f"{self.val_data}")
+
         # Logging
-        print(f"Using {len(train_files_ixi)} IXI images "
-              f"and {len(train_files_fastMRI)} fastMRI images for training. "
-              f"Using {len(val_files)} images for validation.")
+        print(
+            f"Using {len(train_files_ixi)} IXI images "
+            f"and {len(train_files_fastMRI)} fastMRI images for training. "
+            f"Using {len(val_files)} images for validation."
+        )
 
     def train_dataloader(self):
-        return DataLoader(TrainDataset(self.train_data, self.target_size),
-                          batch_size=self.batch_size,
-                          shuffle=True)
+        return DataLoader(
+            TrainDataset(self.train_data, self.target_size),
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=4,
+        )
 
     def val_dataloader(self):
-        return DataLoader(TrainDataset(self.val_data, self.target_size),
-                          batch_size=self.batch_size,
-                          shuffle=False)
+        return DataLoader(
+            TrainDataset(self.val_data, self.target_size),
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=4,
+        )
 
 
 class TestDataset(Dataset):
-
-    def __init__(self, img_csv: str, pos_mask_csv: str, neg_mask_csv: str, target_size=(128, 128)):
+    def __init__(
+        self, img_csv: str, pos_mask_csv: str, neg_mask_csv: str, target_size=(128, 128)
+    ):
         """
         Loads anomalous images, their positive masks and negative masks from data_dir
 
@@ -101,35 +112,40 @@ class TestDataset(Dataset):
         """
         super(TestDataset, self).__init__()
         self.target_size = target_size
-        self.img_paths = pd.read_csv(img_csv)['filename'].tolist()
-        self.pos_mask_paths = pd.read_csv(pos_mask_csv)['filename'].tolist()
-        self.neg_mask_paths = pd.read_csv(neg_mask_csv)['filename'].tolist()
+        self.img_paths = pd.read_csv(img_csv)["filename"].tolist()
+        self.pos_mask_paths = pd.read_csv(pos_mask_csv)["filename"].tolist()
+        self.neg_mask_paths = pd.read_csv(neg_mask_csv)["filename"].tolist()
 
-        assert len(self.img_paths) == len(self.pos_mask_paths) == len(self.neg_mask_paths)
+        assert (
+            len(self.img_paths) == len(self.pos_mask_paths) == len(self.neg_mask_paths)
+        )
+        # print(self.img_paths)
 
     def __len__(self):
         return len(self.img_paths)
 
     def __getitem__(self, idx):
         # Load image
-        img = Image.open(self.img_paths[idx]).convert('L')
+        img = Image.open(self.img_paths[idx]).convert("L")
         img = img.resize(self.target_size, Image.BICUBIC)
         img = transforms.ToTensor()(img)
 
         # Load positive mask
-        pos_mask = Image.open(self.pos_mask_paths[idx]).convert('L')
+        pos_mask = Image.open(self.pos_mask_paths[idx]).convert("L")
         pos_mask = pos_mask.resize(self.target_size, Image.NEAREST)
         pos_mask = transforms.ToTensor()(pos_mask)
 
         # Load negative mask
-        neg_mask = Image.open(self.neg_mask_paths[idx]).convert('L')
+        neg_mask = Image.open(self.neg_mask_paths[idx]).convert("L")
         neg_mask = neg_mask.resize(self.target_size, Image.NEAREST)
         neg_mask = transforms.ToTensor()(neg_mask)
 
         return img, pos_mask, neg_mask
 
 
-def get_test_dataloader(split_dir: str, pathology: str, target_size: Tuple[int, int], batch_size: int):
+def get_test_dataloader(
+    split_dir: str, pathology: str, target_size: Tuple[int, int], batch_size: int
+):
     """
     Loads test data from split_dir
 
@@ -140,17 +156,21 @@ def get_test_dataloader(split_dir: str, pathology: str, target_size: Tuple[int, 
     @param batch_size: int
         batch size
     """
-    img_csv = os.path.join(split_dir, f'{pathology}.csv')
-    pos_mask_csv = os.path.join(split_dir, f'{pathology}_ann.csv')
-    neg_mask_csv = os.path.join(split_dir, f'{pathology}_neg.csv')
+    img_csv = os.path.join(split_dir, f"{pathology}.csv")
+    pos_mask_csv = os.path.join(split_dir, f"{pathology}_ann.csv")
+    neg_mask_csv = os.path.join(split_dir, f"{pathology}_neg.csv")
 
-    return DataLoader(TestDataset(img_csv, pos_mask_csv, neg_mask_csv, target_size),
-                      batch_size=batch_size,
-                      shuffle=False,
-                      drop_last=False)
+    return DataLoader(
+        TestDataset(img_csv, pos_mask_csv, neg_mask_csv, target_size),
+        batch_size=batch_size,
+        shuffle=False,
+        drop_last=False,
+    )
 
 
-def get_all_test_dataloaders(split_dir: str, target_size: Tuple[int, int], batch_size: int):
+def get_all_test_dataloaders(
+    split_dir: str, target_size: Tuple[int, int], batch_size: int
+):
     """
     Loads all test data from split_dir
 
@@ -160,22 +180,24 @@ def get_all_test_dataloaders(split_dir: str, target_size: Tuple[int, int], batch
         batch size
     """
     pathologies = [
-        'absent_septum',
-        'artefacts',
-        'craniatomy',
-        'dural',
-        'ea_mass',
-        'edema',
-        'encephalomalacia',
-        'enlarged_ventricles',
-        'intraventricular',
-        'lesions',
-        'mass',
-        'posttreatment',
-        'resection',
-        'sinus',
-        'wml',
-        'other'
+        "absent_septum",
+        "artefacts",
+        "craniatomy",
+        "dural",
+        "ea_mass",
+        "edema",
+        "encephalomalacia",
+        "enlarged_ventricles",
+        "intraventricular",
+        "lesions",
+        "mass",
+        "posttreatment",
+        "resection",
+        "sinus",
+        "wml",
+        "other",
     ]
-    return {pathology: get_test_dataloader(split_dir, pathology, target_size, batch_size)
-            for pathology in pathologies}
+    return {
+        pathology: get_test_dataloader(split_dir, pathology, target_size, batch_size)
+        for pathology in pathologies
+    }

@@ -45,11 +45,18 @@ class Encoder(nn.Module):
         self.input_layers = nn.Sequential()
         self.input_layers.add_module(
             f"initial-conv-{num_input_channels}-{n_features}",
-            nn.Conv2d(num_input_channels, n_features, kernel_size=4,
-                      stride=2, padding=4, bias=False),
+            nn.Conv2d(
+                num_input_channels,
+                n_features,
+                kernel_size=4,
+                stride=2,
+                padding=4,
+                bias=False,
+            ),
         )
         self.input_layers.add_module(
-            f"initial-relu-{n_features}", nn.LeakyReLU(0.2, inplace=True))
+            f"initial-relu-{n_features}", nn.LeakyReLU(0.2, inplace=True)
+        )
 
         # Extra Layers
         self.extra_layers = nn.Sequential()
@@ -57,13 +64,23 @@ class Encoder(nn.Module):
         for layer in range(extra_layers):
             self.extra_layers.add_module(
                 f"extra-layers-{layer}-{n_features}-conv",
-                nn.Conv2d(n_features, n_features, kernel_size=3,
-                          stride=1, padding=1, bias=False),
+                nn.Conv2d(
+                    n_features,
+                    n_features,
+                    kernel_size=3,
+                    stride=1,
+                    padding=1,
+                    bias=False,
+                ),
             )
             self.extra_layers.add_module(
-                f"extra-layers-{layer}-{n_features}-batchnorm", nn.BatchNorm2d(n_features))
+                f"extra-layers-{layer}-{n_features}-batchnorm",
+                nn.BatchNorm2d(n_features),
+            )
             self.extra_layers.add_module(
-                f"extra-layers-{layer}-{n_features}-relu", nn.LeakyReLU(0.2, inplace=True))
+                f"extra-layers-{layer}-{n_features}-relu",
+                nn.LeakyReLU(0.2, inplace=True),
+            )
 
         # Create pyramid features to reach latent vector
         self.pyramid_features = nn.Sequential()
@@ -74,13 +91,21 @@ class Encoder(nn.Module):
             out_features = n_features * 2
             self.pyramid_features.add_module(
                 f"pyramid-{in_features}-{out_features}-conv",
-                nn.Conv2d(in_features, out_features, kernel_size=4,
-                          stride=2, padding=1, bias=False),
+                nn.Conv2d(
+                    in_features,
+                    out_features,
+                    kernel_size=4,
+                    stride=2,
+                    padding=1,
+                    bias=False,
+                ),
             )
             self.pyramid_features.add_module(
-                f"pyramid-{out_features}-batchnorm", nn.BatchNorm2d(out_features))
+                f"pyramid-{out_features}-batchnorm", nn.BatchNorm2d(out_features)
+            )
             self.pyramid_features.add_module(
-                f"pyramid-{out_features}-relu", nn.LeakyReLU(0.2, inplace=True))
+                f"pyramid-{out_features}-relu", nn.LeakyReLU(0.2, inplace=True)
+            )
             n_features = out_features
             pyramid_dim = pyramid_dim // 2
 
@@ -148,9 +173,9 @@ class Decoder(nn.Module):
             ),
         )
         self.latent_input.add_module(
-            f"initial-{n_input_features}-batchnorm", nn.BatchNorm2d(n_input_features))
-        self.latent_input.add_module(
-            f"initial-{n_input_features}-relu", nn.ReLU(True))
+            f"initial-{n_input_features}-batchnorm", nn.BatchNorm2d(n_input_features)
+        )
+        self.latent_input.add_module(f"initial-{n_input_features}-relu", nn.ReLU(True))
 
         # Create inverse pyramid
         self.inverse_pyramid = nn.Sequential()
@@ -171,9 +196,11 @@ class Decoder(nn.Module):
                 ),
             )
             self.inverse_pyramid.add_module(
-                f"pyramid-{out_features}-batchnorm", nn.BatchNorm2d(out_features))
+                f"pyramid-{out_features}-batchnorm", nn.BatchNorm2d(out_features)
+            )
             self.inverse_pyramid.add_module(
-                f"pyramid-{out_features}-relu", nn.ReLU(True))
+                f"pyramid-{out_features}-relu", nn.ReLU(True)
+            )
             n_input_features = out_features
             pyramid_dim = pyramid_dim // 2
 
@@ -182,16 +209,22 @@ class Decoder(nn.Module):
         for layer in range(extra_layers):
             self.extra_layers.add_module(
                 f"extra-layers-{layer}-{n_input_features}-conv",
-                nn.Conv2d(n_input_features, n_input_features,
-                          kernel_size=3, stride=1, padding=1, bias=False),
+                nn.Conv2d(
+                    n_input_features,
+                    n_input_features,
+                    kernel_size=3,
+                    stride=1,
+                    padding=1,
+                    bias=False,
+                ),
             )
             self.extra_layers.add_module(
-                f"extra-layers-{layer}-{n_input_features}-batchnorm", nn.BatchNorm2d(
-                    n_input_features)
+                f"extra-layers-{layer}-{n_input_features}-batchnorm",
+                nn.BatchNorm2d(n_input_features),
             )
             self.extra_layers.add_module(
-                f"extra-layers-{layer}-{n_input_features}-relu", nn.LeakyReLU(
-                    0.2, inplace=True)
+                f"extra-layers-{layer}-{n_input_features}-relu",
+                nn.LeakyReLU(0.2, inplace=True),
             )
 
         # Final layers
@@ -207,8 +240,7 @@ class Decoder(nn.Module):
                 bias=False,
             ),
         )
-        self.final_layers.add_module(
-            f"final-{num_input_channels}-tanh", nn.Tanh())
+        self.final_layers.add_module(f"final-{num_input_channels}-tanh", nn.Tanh())
 
     def forward(self, input_tensor: Tensor) -> Tensor:
         """Return generated image."""
@@ -232,11 +264,14 @@ class Discriminator(nn.Module):
     """
 
     def __init__(
-        self, input_size: tuple[int, int], num_input_channels: int, n_features: int, extra_layers: int = 0
+        self,
+        input_size: tuple[int, int],
+        num_input_channels: int,
+        n_features: int,
+        extra_layers: int = 0,
     ) -> None:
         super().__init__()
-        encoder = Encoder(input_size, 1, num_input_channels,
-                          n_features, extra_layers)
+        encoder = Encoder(input_size, 1, num_input_channels, n_features, extra_layers)
         layers = []
         for block in encoder.children():
             if isinstance(block, nn.Sequential):
@@ -281,12 +316,23 @@ class Generator(nn.Module):
     ) -> None:
         super().__init__()
         self.encoder1 = Encoder(
-            input_size, latent_vec_size, num_input_channels, n_features, extra_layers, add_final_conv_layer
+            input_size,
+            latent_vec_size,
+            num_input_channels,
+            n_features,
+            extra_layers,
+            add_final_conv_layer,
         )
-        self.decoder = Decoder(input_size, latent_vec_size,
-                               num_input_channels, n_features, extra_layers)
+        self.decoder = Decoder(
+            input_size, latent_vec_size, num_input_channels, n_features, extra_layers
+        )
         self.encoder2 = Encoder(
-            input_size, latent_vec_size, num_input_channels, n_features, extra_layers, add_final_conv_layer
+            input_size,
+            latent_vec_size,
+            num_input_channels,
+            n_features,
+            extra_layers,
+            add_final_conv_layer,
         )
 
     def forward(self, input_tensor: Tensor) -> tuple[Tensor, Tensor, Tensor]:
@@ -361,7 +407,9 @@ class GanomalyModel(nn.Module):
         """
         padded_batch = pad_nextpow2(batch)
         fake, latent_i, latent_o = self.generator(padded_batch)
-        if self.training:
-            return padded_batch, fake, latent_i, latent_o
-        # convert nx1x1 to n
-        return torch.mean(torch.pow((latent_i - latent_o), 2), dim=1).view(-1)
+
+        return padded_batch, fake, latent_i, latent_o
+        # if self.training:
+        #     return padded_batch, fake, latent_i, latent_o
+        # # convert nx1x1 to n
+        # return torch.mean(torch.pow((latent_i - latent_o), 2), dim=1).view(-1)

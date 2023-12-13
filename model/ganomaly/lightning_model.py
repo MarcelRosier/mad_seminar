@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Dict
+
 """GANomaly: Semi-Supervised Anomaly Detection via Adversarial Training.
 
 https://arxiv.org/abs/1805.06725
@@ -58,8 +59,7 @@ class Ganomaly(pl.LightningModule):
         beta2: float = 0.999,
     ) -> None:
         super().__init__()
-
-        self.model: GanomalyModel = GanomalyModel(
+        self.net: GanomalyModel = GanomalyModel(
             input_size=input_size,
             num_input_channels=1,
             n_features=n_features,
@@ -67,14 +67,15 @@ class Ganomaly(pl.LightningModule):
             extra_layers=extra_layers,
             add_final_conv_layer=add_final_conv_layer,
         )
-
         self.real_label = torch.ones(size=(batch_size,), dtype=torch.float32)
         self.fake_label = torch.zeros(size=(batch_size,), dtype=torch.float32)
 
         self.min_scores: Tensor = torch.tensor(
-            float("inf"), dtype=torch.float32)  # pylint: disable=not-callable
+            float("inf"), dtype=torch.float32
+        )  # pylint: disable=not-callable
         self.max_scores: Tensor = torch.tensor(
-            float("-inf"), dtype=torch.float32)  # pylint: disable=not-callable
+            float("-inf"), dtype=torch.float32
+        )  # pylint: disable=not-callable
 
         self.generator_loss = GeneratorLoss(wadv, wcon, wenc)
         self.discriminator_loss = DiscriminatorLoss()
@@ -86,13 +87,6 @@ class Ganomaly(pl.LightningModule):
         self.beta2 = beta2
 
         # self.automatic_optimization = False  # Turn off automatic optimization
-
-    def _reset_min_max(self) -> None:
-        """Resets min_max scores."""
-        self.min_scores = torch.tensor(
-            float("inf"), dtype=torch.float32)  # pylint: disable=not-callable
-        self.max_scores = torch.tensor(
-            float("-inf"), dtype=torch.float32)  # pylint: disable=not-callable
 
     def configure_optimizers(self) -> list[optim.Optimizer]:
         """Configures optimizers for each decoder.
@@ -107,12 +101,12 @@ class Ganomaly(pl.LightningModule):
             Optimizer: Adam optimizer for each decoder
         """
         optimizer_d = optim.Adam(
-            self.model.discriminator.parameters(),
+            self.net.discriminator.parameters(),
             lr=self.learning_rate,
             betas=(self.beta1, self.beta2),
         )
         optimizer_g = optim.Adam(
-            self.model.generator.parameters(),
+            self.net.generator.parameters(),
             lr=self.learning_rate,
             betas=(self.beta1, self.beta2),
         )
@@ -134,69 +128,60 @@ class Ganomaly(pl.LightningModule):
         del batch_idx  # `batch_idx` variables is not used.
 
         # forward pass
-        padded, fake, latent_i, latent_o = self.model(batch)
-        pred_real, _ = self.model.discriminator(padded)
+        padded, fake, latent_i, latent_o = self.net(batch)
+        pred_real, _ = self.net.discriminator(padded)
 
         if optimizer_idx == 0:  # Discriminator
-            pred_fake, _ = self.model.discriminator(fake.detach())
+            pred_fake, _ = self.net.discriminator(fake.detach())
             loss = self.discriminator_loss(pred_real, pred_fake)
         else:  # Generator
-            pred_fake, _ = self.model.discriminator(fake)
+            scores = torch.mean(torch.pow((latent_i - latent_o), 2), dim=1).view(-1)
+            self.log(
+                "train_anomaly_score_G",
+                scores.mean().item(),
+                on_step=True,
+                on_epoch=False,
+            )
+            pred_fake, _ = self.net.discriminator(fake)
             loss = self.generator_loss(
-                latent_i, latent_o, padded, fake, pred_real, pred_fake)
+                latent_i, latent_o, padded, fake, pred_real, pred_fake
+            )
 
-        self.log("train_loss", loss.item(), on_epoch=True,
-                 prog_bar=True, logger=True)
+        loss_name = "D_loss" if optimizer_idx == 0 else "G_loss"
+        self.log(loss_name, loss.item(), on_epoch=True, prog_bar=True, logger=True)
         return {"loss": loss}
 
-    # def on_validation_start(self) -> None:
-    #     """Reset min and max values for current validation epoch."""
-    #     self._reset_min_max()
-    #     return super().on_validation_start()
+    def _reset_min_max(self) -> None:
+        """Resets min_max scores."""
+        self.min_scores = torch.tensor(
+            float("inf"), dtype=torch.float32
+        )  # pylint: disable=not-callable
+        self.max_scores = torch.tensor(
+            float("-inf"), dtype=torch.float32
+        )  # pylint: disable=not-callable
 
-    # def validation_step(self, batch: dict[str, str | Tensor], *args, **kwargs) -> STEP_OUTPUT:
-    #     """Update min and max scores from the current step.
+    def validation_step(
+        self, batch: dict[str, str | Tensor], *args, **kwargs
+    ) -> STEP_OUTPUT:
+        """Update min and max scores from the current step.
 
-    #     Args:
-    #         batch (dict[str, str | Tensor]): Predicted difference between z and z_hat.
+        Args:
+            batch (dict[str, str | Tensor]): Predicted difference between z and z_hat.
 
-    #     Returns:
-    #         (STEP_OUTPUT): Output predictions.
-    #     """
-    #     batch["pred_scores"] = self.model(batch["image"])
-    #     self.max_scores = max(self.max_scores, torch.max(batch["pred_scores"]))
-    #     self.min_scores = min(self.min_scores, torch.min(batch["pred_scores"]))
-    #     return batch
+        Returns:
+            (STEP_OUTPUT): Output predictions.
+        """
+        _, fake, latent_i, latent_o = self.net(batch)
+        scores = torch.mean(torch.pow((latent_i - latent_o), 2), dim=1).view(-1)
+        self.max_scores = max(self.max_scores, torch.max(scores))
+        self.min_scores = min(self.min_scores, torch.min(scores))
 
-    # def on_validation_epoch_end(self, outputs: EPOCH_OUTPUT) -> EPOCH_OUTPUT:
-    #     """Normalize outputs based on min/max values."""
-    #     logger.info("Normalizing validation outputs based on min/max values.")
-    #     for prediction in outputs:
-    #         prediction["pred_scores"] = self._normalize(
-    #             prediction["pred_scores"])
-    #     super().validation_epoch_end(outputs)
-    #     return outputs
+        self.log(
+            "val_anomaly_score", scores.mean().item(), on_step=True, on_epoch=False
+        )
 
-    # def on_test_start(self) -> None:
-    #     """Reset min max values before test batch starts."""
-    #     self._reset_min_max()
-    #     return super().on_test_start()
-
-    # def test_step(self, batch: dict[str, str | Tensor], batch_idx: int, *args, **kwargs) -> STEP_OUTPUT:
-    #     """Update min and max scores from the current step."""
-    #     super().test_step(batch, batch_idx)
-    #     self.max_scores = max(self.max_scores, torch.max(batch["pred_scores"]))
-    #     self.min_scores = min(self.min_scores, torch.min(batch["pred_scores"]))
-    #     return batch
-
-    # def test_epoch_end(self, outputs: EPOCH_OUTPUT) -> EPOCH_OUTPUT:
-    #     """Normalize outputs based on min/max values."""
-    #     logger.info("Normalizing test outputs based on min/max values.")
-    #     for prediction in outputs:
-    #         prediction["pred_scores"] = self._normalize(
-    #             prediction["pred_scores"])
-    #     super().test_epoch_end(outputs)
-    #     return outputs
+        # return batch
+        return {"scores": scores}
 
     def _normalize(self, scores: Tensor) -> Tensor:
         """Normalize the scores based on min/max of entire dataset.
@@ -208,73 +193,26 @@ class Ganomaly(pl.LightningModule):
             Tensor: Normalized scores.
         """
         scores = (scores - self.min_scores.to(scores.device)) / (
-            self.max_scores.to(scores.device) -
-            self.min_scores.to(scores.device)
+            self.max_scores.to(scores.device) - self.min_scores.to(scores.device)
         )
         return scores
 
     def detect_anomaly(self, x: Tensor):
-        # _, _, latent_i, latent_o = self.model(x)
-        # anomaly_score = torch.mean(
-        #     torch.pow((latent_i - latent_o), 2), dim=1).view(-1)
-        # return {
-        #     'latent_i': latent_i,
-        #     'latent_o': latent_o,
-        #     'anomaly_score': anomaly_score
-        # }
-        return self.model(x)
-
-
-class GanomalyLightning(Ganomaly):
-    """PL Lightning Module for the GANomaly Algorithm.
-
-    Args:
-        hparams (DictConfig | ListConfig): Model params
-    """
-
-    def __init__(self, hparams) -> None:
-        # super().__init__(
-        #     batch_size=hparams.dataset.train_batch_size,
-        #     input_size=hparams.model.input_size,
-        #     n_features=hparams.model.n_features,
-        #     latent_vec_size=hparams.model.latent_vec_size,
-        #     extra_layers=hparams.model.extra_layers,
-        #     add_final_conv_layer=hparams.model.add_final_conv,
-        #     wadv=hparams.model.wadv,
-        #     wcon=hparams.model.wcon,
-        #     wenc=hparams.model.wenc,
-        #     lr=hparams.model.lr,
-        #     beta1=hparams.model.beta1,
-        #     beta2=hparams.model.beta2,
-        # )
-        # self.save_hyperparameters(hparams)
-        super().__init__(
-            batch_size=hparams['dataset']['train_batch_size'],
-            input_size=(128, 128),  # TODO FIX: add to config
-            n_features=hparams['model']['n_features'],
-            latent_vec_size=hparams['model']['latent_vec_size'],
-            # extra_layers=hparams.model.extra_layers,
-            # add_final_conv_layer=hparams.model.add_final_conv,
-            # wadv=hparams.model.wadv,
-            # wcon=hparams.model.wcon,
-            # wenc=hparams.model.wenc,
-            # lr=hparams.model.lr,
-            # beta1=hparams.model.beta1,
-            # beta2=hparams.model.beta2,
-        )
+        _, fake, latent_i, latent_o = self.net(x)
+        anomaly_score = torch.mean(torch.pow((latent_i - latent_o), 2), dim=1).view(-1)
+        return {
+            "reconstruction": fake,
+            "anomaly_map": torch.abs(x - fake),
+            "latent_i": latent_i,
+            "latent_o": latent_o,
+            "anomaly_score": anomaly_score,
+        }
 
     def configure_callbacks(self) -> list[Callback]:
-        """Configure model-specific callbacks.
-
-        Note:
-            This method is used for the existing CLI.
-            When PL CLI is introduced, configure callback method will be
-                deprecated, and callbacks will be configured from either
-                config.yaml file or from CLI.
-        """
+        """Configure model-specific callbacks."""
         early_stopping = EarlyStopping(
-            monitor=self.hparams.model.early_stopping.metric,
-            patience=self.hparams.model.early_stopping.patience,
-            mode=self.hparams.model.early_stopping.mode,
+            monitor="val_anomaly_score",  # Change this to the metric you want to monitor
+            patience=10,  # Number of epochs with no improvement after which training will be stopped
+            mode="min",  # "min" if the monitored quantity should be minimized, "max" otherwise
         )
         return [early_stopping]
