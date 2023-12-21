@@ -234,3 +234,23 @@ class GanomalyEvaluator:
         plt.xlabel("Predicted")
         plt.ylabel("True")
         plt.show()
+
+    def find_optimal_threshold_f1(self):
+        true_labels, anomaly_scores = self.get_labeled_scores()
+        precision, recall, thresholds = precision_recall_curve(
+            true_labels, anomaly_scores
+        )
+        f1_scores = 2 * (precision * recall) / (precision + recall)
+
+        # Find the threshold that maximizes the F1-score
+        optimal_threshold_index = np.argmax(f1_scores)
+        optimal_threshold = thresholds[optimal_threshold_index]
+
+        return optimal_threshold
+
+    def classification_report(self, threshold=0.5):
+        # Compute confusion matrix
+        true_labels, anomaly_scores = self.get_labeled_scores()
+
+        predicted_labels = np.array(anomaly_scores) > threshold
+        print(classification_report(true_labels, predicted_labels))
