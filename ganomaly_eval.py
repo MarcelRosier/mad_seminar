@@ -30,6 +30,12 @@ class GanomalyEvaluator:
         self.dataloaders = dataloaders
 
     def evaluate_model(self, normalize: bool):
+        """
+        Evaluate the model on the test set
+
+        Args:
+            normalize (bool): normalize the scores
+        """
         label_score_dict = {}
         for label, dataloader in self.dataloaders.items():
             anomaly_scores = []
@@ -65,6 +71,12 @@ class GanomalyEvaluator:
         return abnormal_scores
 
     def histplot(self, eval_type=EvalType.MERGED):
+        """
+        Plot the histogram of anomaly scores
+
+        Args:
+            eval_type (EvalType): the type of evaluation to plot the histogram for
+        """
         if eval_type == EvalType.MERGED:
             # plot normal
             sns.histplot(
