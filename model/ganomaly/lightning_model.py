@@ -208,11 +208,11 @@ class Ganomaly(pl.LightningModule):
             "anomaly_score": anomaly_score,
         }
 
-    def configure_callbacks(self) -> list[Callback]:
-        """Configure model-specific callbacks."""
-        early_stopping = EarlyStopping(
-            monitor="val_anomaly_score",  # Change this to the metric you want to monitor
-            patience=10,  # Number of epochs with no improvement after which training will be stopped
-            mode="min",  # "min" if the monitored quantity should be minimized, "max" otherwise
-        )
-        return [early_stopping]
+    # def configure_callbacks(self) -> list[Callback]:
+    #     """Configure model-specific callbacks."""
+    #     early_stopping = EarlyStopping(
+    #         monitor="val_anomaly_score",  # Change this to the metric you want to monitor
+    #         patience=10,  # Number of epochs with no improvement after which training will be stopped
+    #         mode="min",  # "min" if the monitored quantity should be minimized, "max" otherwise
+    #     )
+    #     return [early_stopping]

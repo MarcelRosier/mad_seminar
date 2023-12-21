@@ -4,10 +4,17 @@ import matplotlib.pyplot as plt
 from rich.console import Console
 from rich.table import Table
 import numpy as np
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import (
+    roc_auc_score,
+    roc_curve,
+    auc,
+    precision_recall_curve,
+    confusion_matrix,
+    classification_report,
+)
 
 
-BINS = 200
+BINS = 100
 
 
 class EvalType(Enum):
@@ -21,9 +28,8 @@ class GanomalyEvaluator:
     def __init__(self, model, dataloaders) -> None:
         self.model = model
         self.dataloaders = dataloaders
-        self.merge_abnormal = False
 
-    def evaluate_model(self):
+    def evaluate_model(self, normalize: bool):
         label_score_dict = {}
         for label, dataloader in self.dataloaders.items():
             anomaly_scores = []
@@ -40,7 +46,16 @@ class GanomalyEvaluator:
             label_score_dict[label] = anomaly_scores
 
         self.label_score_dict = label_score_dict
-        self.print_stats_table(label_score_dict)
+        if normalize:
+            self.normalize_scores()
+
+    def normalize_scores(self):
+        # normalize each array based on the min and max of all arrays
+        _, merged_scores = self.get_labeled_scores()
+        for k, v in self.label_score_dict.items():
+            self.label_score_dict[k] = (v - np.min(merged_scores)) / (
+                np.max(merged_scores) - np.min(merged_scores)
+            )
 
     def get_merged_abnormal_scores(self):
         abnormal_scores = []
@@ -77,10 +92,7 @@ class GanomalyEvaluator:
         plt.legend()
         plt.show()
 
-    # def calc_auroc():
-    #     return roc_auc_score(labels, scores)
-
-    def print_stats_table(self, label_score_dict):
+    def print_stats_table(self):
         console = Console()
 
         table = Table(title="Statistics of Anomaly Scores per categroy")
@@ -92,17 +104,7 @@ class GanomalyEvaluator:
         table.add_column("Variance", justify="right", header_style="bold")
         table.add_column("#Samples", justify="right", header_style="bold")
 
-        if self.merge_abnormal:
-            label_score_dict["abnormal"] = []
-            for label, scores in label_score_dict.items():
-                if label != "normal":
-                    label_score_dict["abnormal"].extend(scores)
-            # remove all other labels
-            label_score_dict = {
-                "abnormal": label_score_dict["abnormal"],
-                "normal": label_score_dict["normal"],
-            }
-        for label, scores in label_score_dict.items():
+        for label, scores in self.label_score_dict.items():
             min_val, max_val, median_val, mean_val, var_val, n = self.calc_stats(
                 scores, label, verbose=False
             )
@@ -138,3 +140,97 @@ class GanomalyEvaluator:
             print(f"  Number of samples: {numberSamples}")
 
         return min_val, max_val, median_val, mean_val, var_val, numberSamples
+
+    # get score labels list
+    def get_labeled_scores(self):
+        labels = []
+        scores = []
+
+        for pathology, anomaly_scores in self.label_score_dict.items():
+            if pathology == "normal":
+                labels.extend([0] * len(anomaly_scores))
+            else:
+                labels.extend([1] * len(anomaly_scores))
+            scores.extend(anomaly_scores)
+        return labels, scores
+
+    def roc_auc_score(self):
+        labels, scores = self.get_labeled_scores()
+        return roc_auc_score(labels, scores)
+
+    def plot_auroc(self):
+        labels, scores = self.get_labeled_scores()
+
+        fpr, tpr, _ = roc_curve(labels, scores)
+        roc_auc = auc(fpr, tpr)
+
+        plt.figure()
+        lw = 2
+        plt.plot(
+            fpr,
+            tpr,
+            color="darkorange",
+            lw=lw,
+            label=f"ROC curve (area = {roc_auc:.2f})",
+        )
+        plt.plot([0, 1], [0, 1], color="navy", lw=lw, linestyle="--")
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+
+        plt.xlabel("False Positive Rate")
+        plt.ylabel("True Positive Rate")
+        plt.title("Receiver operating characteristic example")
+        plt.legend(loc="lower right")
+        plt.show()
+
+    def plot_auprc(self):
+        labels, scores = self.get_labeled_scores()
+        precision, recall, _ = precision_recall_curve(labels, scores)
+        # print(f"Precision: {precision}, Recall: {recall}")
+        auprc = auc(recall, precision)
+
+        plt.figure()
+        lw = 2
+        plt.plot(
+            recall,
+            precision,
+            color="darkorange",
+            lw=lw,
+            label=f"PR curve (area = {auprc:.2f})",
+        )
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+
+        plt.xlabel("Recall")
+        plt.ylabel("Precision")
+        plt.title("Precision-Recall curve")
+        plt.legend(loc="lower right")
+        plt.show()
+
+    def prc_auc_score(self):
+        labels, scores = self.get_labeled_scores()
+        precision, recall, _ = precision_recall_curve(labels, scores)
+        return auc(recall, precision)
+
+    def plot_confusion_matrix(self, threshold=0.5):
+        # Compute confusion matrix
+        true_labels, anomaly_scores = self.get_labeled_scores()
+
+        predicted_labels = np.array(anomaly_scores) > threshold
+        cm = confusion_matrix(true_labels, predicted_labels)
+
+        # Plot confusion matrix as a heatmap
+        plt.figure(figsize=(8, 6))
+        sns.heatmap(
+            cm,
+            annot=True,
+            fmt="d",
+            cmap="Blues",
+            cbar=False,
+            xticklabels=["Normal", "Anomalous"],
+            yticklabels=["Normal", "Anomalous"],
+        )
+        plt.title("title")
+        plt.xlabel("Predicted")
+        plt.ylabel("True")
+        plt.show()

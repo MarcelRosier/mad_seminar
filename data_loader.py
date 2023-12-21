@@ -116,6 +116,7 @@ class TestDataset(Dataset):
         self.pos_mask_paths = pd.read_csv(pos_mask_csv)["filename"].tolist()
         self.neg_mask_paths = pd.read_csv(neg_mask_csv)["filename"].tolist()
 
+        print(f"{img_csv=} \n {len(self.img_paths)=}")
         assert (
             len(self.img_paths) == len(self.pos_mask_paths) == len(self.neg_mask_paths)
         )
@@ -129,7 +130,6 @@ class TestDataset(Dataset):
         img = Image.open(self.img_paths[idx]).convert("L")
         img = img.resize(self.target_size, Image.BICUBIC)
         img = transforms.ToTensor()(img)
-
         # Load positive mask
         pos_mask = Image.open(self.pos_mask_paths[idx]).convert("L")
         pos_mask = pos_mask.resize(self.target_size, Image.NEAREST)
@@ -141,6 +141,38 @@ class TestDataset(Dataset):
         neg_mask = transforms.ToTensor()(neg_mask)
 
         return img, pos_mask, neg_mask
+
+
+class NormalTestDataset(Dataset):
+    def __init__(self, img_csv: str, target_size=(128, 128)):
+        """
+        Loads anomalous images, their positive masks and negative masks from data_dir
+
+        @param img_csv: str
+            path to csv file containing filenames to the images
+        @param img_csv: str
+            path to csv file containing filenames to the positive masks
+        @param img_csv: str
+            path to csv file containing filenames to the negative masks
+        @param: target_size: tuple (int, int), default: (128, 128)
+            the desired output size
+        """
+        super(NormalTestDataset, self).__init__()
+        self.target_size = target_size
+        self.img_paths = pd.read_csv(img_csv)["filename"].tolist()
+
+        print(f"{img_csv=} \n {len(self.img_paths)=}")
+
+    def __len__(self):
+        return len(self.img_paths)
+
+    def __getitem__(self, idx):
+        # Load image
+        img = Image.open(self.img_paths[idx]).convert("L")
+        img = img.resize(self.target_size, Image.BICUBIC)
+        img = transforms.ToTensor()(img)
+
+        return img
 
 
 def get_test_dataloader(
@@ -162,6 +194,29 @@ def get_test_dataloader(
 
     return DataLoader(
         TestDataset(img_csv, pos_mask_csv, neg_mask_csv, target_size),
+        batch_size=batch_size,
+        shuffle=False,
+        drop_last=False,
+    )
+
+
+def get_normal_test_dataloader(
+    split_dir: str, target_size: Tuple[int, int], batch_size: int
+):
+    """
+    Loads test data from split_dir
+
+    @param split_dir: str
+        path to directory containing the split files
+    @param pathology: str
+        pathology to load
+    @param batch_size: int
+        batch size
+    """
+    img_csv = os.path.join(split_dir, f"normal_test.csv")
+
+    return DataLoader(
+        NormalTestDataset(img_csv, target_size),
         batch_size=batch_size,
         shuffle=False,
         drop_last=False,
@@ -196,6 +251,7 @@ def get_all_test_dataloaders(
         "sinus",
         "wml",
         "other",
+        # "normal_test",
     ]
     return {
         pathology: get_test_dataloader(split_dir, pathology, target_size, batch_size)

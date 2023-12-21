@@ -88,6 +88,7 @@ class Evaluator:
                 # print(results.keys())
                 reconstructions = results["reconstruction"]
                 anomaly_maps = results["anomaly_map"]
+                anomaly_scores = results["anomaly_score"]
 
                 for i in range(nr_batches):
                     count = str(idx * nr_batches + i)

@@ -32,6 +32,7 @@ trainer = pl.Trainer(
     ],
     accelerator="gpu",
     devices=1,
+    callbacks=model.configure_callbacks(),  # Include your callbacks
 )
 
 trainer.fit(model, datamodule=train_data_module)
