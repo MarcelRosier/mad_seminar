@@ -36,10 +36,11 @@ class GanomalyEvaluator:
         Args:
             normalize (bool): normalize the scores
         """
-        label_score_dict = {}
+        self.label_score_dict = {}
+        self.label_in_rec_dict = {}
         for label, dataloader in self.dataloaders.items():
             anomaly_scores = []
-
+            input_reconstructions_tuples = []
             for batch in dataloader:
                 if len(batch) == 3:
                     images, _, _ = batch
@@ -48,10 +49,17 @@ class GanomalyEvaluator:
                 # Assuming your model has a detect_anomaly method
                 result = self.model.detect_anomaly(images)
                 anomaly_scores.extend(result["anomaly_score"].cpu().detach().numpy())
+                ## store reconstructions
+                input_reconstructions_tuples.extend(
+                    zip(
+                        images.cpu().detach().numpy(),
+                        result["reconstruction"].cpu().detach().numpy(),
+                    ),
+                )
 
-            label_score_dict[label] = anomaly_scores
+            self.label_score_dict[label] = anomaly_scores
+            self.label_in_rec_dict[label] = input_reconstructions_tuples
 
-        self.label_score_dict = label_score_dict
         if normalize:
             self.normalize_scores()
 
@@ -62,6 +70,24 @@ class GanomalyEvaluator:
             self.label_score_dict[k] = (v - np.min(merged_scores)) / (
                 np.max(merged_scores) - np.min(merged_scores)
             )
+
+    def plot_in_rec(self, label, n=1):
+        """
+        Plot the input and reconstruction images
+
+        Args:
+            label (str): the label to plot the images for
+            n (int): the number of images to plot
+        """
+        input_reconstructions_tuples = self.label_in_rec_dict[label]
+        for i in range(n):
+            input_img, reconstruction_img = input_reconstructions_tuples[i]
+            fig, ax = plt.subplots(1, 2)
+            ax[0].imshow(input_img.transpose(1, 2, 0), cmap="gray")
+            ax[0].set_title("Input")
+            ax[1].imshow(reconstruction_img.transpose(1, 2, 0), cmap="gray")
+            ax[1].set_title("Reconstruction")
+            plt.show()
 
     def get_merged_abnormal_scores(self):
         abnormal_scores = []
