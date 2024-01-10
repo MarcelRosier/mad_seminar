@@ -17,6 +17,9 @@ def get_model(config):
             latent_vec_size=config["latent_vec_size"],
             batch_size=config["batch_size"],
             input_size=config["target_size"],
+            n_features=config["n_features"],
+            lr=config["lr"],
+            extra_layers=config["extra_layers"],
         )
     else:
         raise ValueError(f"Unknown model name {config['model_name']}")

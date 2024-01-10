@@ -22,6 +22,7 @@ class EvalType(Enum):
     ABNORMAL = "abnormal"
     ALL = "all"
     MERGED = "merged"
+    TRAIN = "train"
 
 
 class GanomalyEvaluator:
@@ -67,9 +68,12 @@ class GanomalyEvaluator:
         # normalize each array based on the min and max of all arrays
         _, merged_scores = self.get_labeled_scores()
         for k, v in self.label_score_dict.items():
-            self.label_score_dict[k] = (v - np.min(merged_scores)) / (
-                np.max(merged_scores) - np.min(merged_scores)
-            )
+            if True:  # k != "train":
+                self.label_score_dict[k] = (v - np.min(merged_scores)) / (
+                    np.max(merged_scores) - np.min(merged_scores)
+                )
+            else:
+                self.label_score_dict[k] = (v - np.min(v)) / (np.max(v) - np.min(v))
 
     def plot_in_rec(self, label, n=1):
         """
@@ -92,7 +96,7 @@ class GanomalyEvaluator:
     def get_merged_abnormal_scores(self):
         abnormal_scores = []
         for k, v in self.label_score_dict.items():
-            if k != "normal":
+            if k not in ["normal", "train"]:
                 abnormal_scores.extend(v)
         return abnormal_scores
 
@@ -114,6 +118,10 @@ class GanomalyEvaluator:
         elif eval_type == EvalType.NORMAL:
             sns.histplot(
                 self.label_score_dict["normal"], bins=BINS, kde=True, label="normal"
+            )
+        elif eval_type == EvalType.TRAIN:
+            sns.histplot(
+                self.label_score_dict["train"], bins=BINS, kde=True, label="train"
             )
         elif eval_type == EvalType.ABNORMAL:
             for k, v in self.label_score_dict.items():
@@ -185,11 +193,12 @@ class GanomalyEvaluator:
         scores = []
 
         for pathology, anomaly_scores in self.label_score_dict.items():
-            if pathology == "normal":
+            if pathology in ["normal", "train"]:
                 labels.extend([0] * len(anomaly_scores))
             else:
                 labels.extend([1] * len(anomaly_scores))
-            scores.extend(anomaly_scores)
+            if pathology != "train":
+                scores.extend(anomaly_scores)
         return labels, scores
 
     def roc_auc_score(self):

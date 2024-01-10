@@ -25,15 +25,16 @@ train_data_module = TrainDataModule(
 # Init model
 model = get_model(config)
 
-# Use tensorboard logger and CSV logger
-wandb_logger = WandbLogger(name="GANomaly-Training", project="GANomaly")
+# from torchsummary import summary
+
+# summary(model.net.to("cuda"), (1, 128, 128))
 
 trainer = pl.Trainer(
     max_epochs=config["num_epochs"],
     logger=[
         pl.loggers.TensorBoardLogger(save_dir="./"),
         # pl.loggers.CSVLogger(save_dir="./"),
-        wandb_logger,
+        WandbLogger(name="GANomaly-Training", project="GANomaly"),
     ],
     accelerator="gpu",
     devices=1,

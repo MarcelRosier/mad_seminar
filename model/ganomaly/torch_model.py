@@ -403,7 +403,7 @@ class GanomalyModel(nn.Module):
             batch (Tensor): Images
 
         Returns:
-            Tensor: Regeneration scores.
+            idk bro
         """
         padded_batch = pad_nextpow2(batch)
         fake, latent_i, latent_o = self.generator(padded_batch)

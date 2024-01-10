@@ -110,7 +110,14 @@ class Ganomaly(pl.LightningModule):
             lr=self.learning_rate,
             betas=(self.beta1, self.beta2),
         )
-        return [optimizer_d, optimizer_g]
+        scheduler_d = torch.optim.lr_scheduler.ExponentialLR(
+            optimizer_d, gamma=0.98, verbose=True
+        )
+        scheduler_g = torch.optim.lr_scheduler.ExponentialLR(
+            optimizer_g, gamma=0.98, verbose=True
+        )
+
+        return [optimizer_d, optimizer_g], [scheduler_d, scheduler_g]
 
     def training_step(
         self, batch: dict[str, str | Tensor], batch_idx: int, optimizer_idx: int

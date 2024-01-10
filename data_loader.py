@@ -223,6 +223,25 @@ def get_normal_test_dataloader(
     )
 
 
+def get_train_dataloader(split_dir: str, target_size: Tuple[int, int], batch_size: int):
+    train_csv_ixi = os.path.join(split_dir, "ixi_normal_train.csv")
+    train_csv_fastMRI = os.path.join(split_dir, "normal_train.csv")
+
+    # Load csv files
+    train_files_ixi = pd.read_csv(train_csv_ixi)["filename"].tolist()
+    train_files_fastMRI = pd.read_csv(train_csv_fastMRI)["filename"].tolist()
+
+    # Combine files
+    train_data = train_files_ixi + train_files_fastMRI
+
+    return DataLoader(
+        TrainDataset(train_data, target_size),
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=4,
+    )
+
+
 def get_all_test_dataloaders(
     split_dir: str, target_size: Tuple[int, int], batch_size: int
 ):
