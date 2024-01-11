@@ -20,6 +20,9 @@ def get_model(config):
             n_features=config["n_features"],
             lr=config["lr"],
             extra_layers=config["extra_layers"],
+            wadv=config["wadv"],
+            wcon=config["wcon"],
+            wenc=config["wenc"],
         )
     else:
         raise ValueError(f"Unknown model name {config['model_name']}")

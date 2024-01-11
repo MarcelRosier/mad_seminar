@@ -77,7 +77,7 @@ class Ganomaly(pl.LightningModule):
             float("-inf"), dtype=torch.float32
         )  # pylint: disable=not-callable
 
-        self.generator_loss = GeneratorLoss(wadv, wcon, wenc)
+        self.generator_loss = GeneratorLoss(wadv, wcon, wenc, self.log)
         self.discriminator_loss = DiscriminatorLoss()
 
         # TODO: LR should be part of optimizer in config.yaml! Since ganomaly has custom

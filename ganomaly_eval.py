@@ -68,12 +68,9 @@ class GanomalyEvaluator:
         # normalize each array based on the min and max of all arrays
         _, merged_scores = self.get_labeled_scores()
         for k, v in self.label_score_dict.items():
-            if True:  # k != "train":
-                self.label_score_dict[k] = (v - np.min(merged_scores)) / (
-                    np.max(merged_scores) - np.min(merged_scores)
-                )
-            else:
-                self.label_score_dict[k] = (v - np.min(v)) / (np.max(v) - np.min(v))
+            self.label_score_dict[k] = (v - np.min(merged_scores)) / (
+                np.max(merged_scores) - np.min(merged_scores)
+            )
 
     def plot_in_rec(self, label, n=1):
         """
@@ -193,12 +190,11 @@ class GanomalyEvaluator:
         scores = []
 
         for pathology, anomaly_scores in self.label_score_dict.items():
-            if pathology in ["normal", "train"]:
+            if pathology in ["normal"]:
                 labels.extend([0] * len(anomaly_scores))
             else:
                 labels.extend([1] * len(anomaly_scores))
-            if pathology != "train":
-                scores.extend(anomaly_scores)
+            scores.extend(anomaly_scores)
         return labels, scores
 
     def roc_auc_score(self):

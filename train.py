@@ -33,8 +33,7 @@ trainer = pl.Trainer(
     max_epochs=config["num_epochs"],
     logger=[
         pl.loggers.TensorBoardLogger(save_dir="./"),
-        # pl.loggers.CSVLogger(save_dir="./"),
-        WandbLogger(name="GANomaly-Training", project="GANomaly"),
+        WandbLogger(project="GANomaly"),
     ],
     accelerator="gpu",
     devices=1,

@@ -18,19 +18,26 @@ class GeneratorLoss(nn.Module):
         wenc (int, optional): Latent vector encoder weight. Defaults to 1.
     """
 
-    def __init__(self, wadv=1, wcon=50, wenc=1) -> None:
+    def __init__(self, wadv=1, wcon=50, wenc=1, log=None) -> None:
         super().__init__()
 
         self.loss_enc = nn.SmoothL1Loss()
         self.loss_adv = nn.MSELoss()
         self.loss_con = nn.L1Loss()
-
         self.wadv = wadv
         self.wcon = wcon
         self.wenc = wenc
 
+        self.log = log
+
     def forward(
-        self, latent_i: Tensor, latent_o: Tensor, images: Tensor, fake: Tensor, pred_real: Tensor, pred_fake: Tensor
+        self,
+        latent_i: Tensor,
+        latent_o: Tensor,
+        images: Tensor,
+        fake: Tensor,
+        pred_real: Tensor,
+        pred_fake: Tensor,
     ) -> Tensor:
         """Compute the loss for a batch.
 
@@ -49,6 +56,10 @@ class GeneratorLoss(nn.Module):
         error_con = self.loss_con(images, fake)
         error_adv = self.loss_adv(pred_real, pred_fake)
 
+        if self.log:
+            self.log("loss_enc", error_enc, on_epoch=True)
+            self.log("loss_con", error_con, on_epoch=True)
+            self.log("loss_adv", error_adv, on_epoch=True)
         loss = error_adv * self.wadv + error_con * self.wcon + error_enc * self.wenc
         return loss
 
@@ -72,13 +83,16 @@ class DiscriminatorLoss(nn.Module):
             Tensor: The computed discriminator loss.
         """
         error_discriminator_real = self.loss_bce(
-            pred_real, torch.ones(size=pred_real.shape,
-                                  dtype=torch.float32, device=pred_real.device)
+            pred_real,
+            torch.ones(
+                size=pred_real.shape, dtype=torch.float32, device=pred_real.device
+            ),
         )
         error_discriminator_fake = self.loss_bce(
-            pred_fake, torch.zeros(
-                size=pred_fake.shape, dtype=torch.float32, device=pred_fake.device)
+            pred_fake,
+            torch.zeros(
+                size=pred_fake.shape, dtype=torch.float32, device=pred_fake.device
+            ),
         )
-        loss_discriminator = (error_discriminator_fake +
-                              error_discriminator_real) * 0.5
+        loss_discriminator = (error_discriminator_fake + error_discriminator_real) * 0.5
         return loss_discriminator

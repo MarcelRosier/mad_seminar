@@ -34,6 +34,7 @@ class TrainDataset(Dataset):
         img = img.resize(self.target_size, Image.BICUBIC)
         # Convert to tensor
         img = transforms.ToTensor()(img)
+        img = transforms.Normalize((0,), (1,))(img)
 
         return img
 
