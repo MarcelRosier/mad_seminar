@@ -7,12 +7,13 @@ split_dir: ./data/splits
 # target_size: !<tag:yaml.org,2002:seq> [128,128]
 # target_size: !<tag:yaml.org,2002:seq> [32,32]
 target_size: !<tag:yaml.org,2002:seq> [64,64]
-batch_size: 512
-latent_vec_size : 512
-n_features: 32
+batch_size: 40
+latent_vec_size : 4096
+n_features: 140
 lr: 0.004
 num_epochs: 150
-extra_layers: 2
-wadv: 1
+extra_layers: 4
+wadv: 2
 wcon: 50
 wenc: 1
+kernel_size: 4

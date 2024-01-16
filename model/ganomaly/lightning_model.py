@@ -57,6 +57,7 @@ class Ganomaly(pl.LightningModule):
         lr: float = 0.0002,
         beta1: float = 0.5,
         beta2: float = 0.999,
+        kernel_size: int = 4,
     ) -> None:
         super().__init__()
         self.net: GanomalyModel = GanomalyModel(
@@ -66,6 +67,7 @@ class Ganomaly(pl.LightningModule):
             latent_vec_size=latent_vec_size,
             extra_layers=extra_layers,
             add_final_conv_layer=add_final_conv_layer,
+            kernel_size=kernel_size,
         )
         self.real_label = torch.ones(size=(batch_size,), dtype=torch.float32)
         self.fake_label = torch.zeros(size=(batch_size,), dtype=torch.float32)

@@ -39,6 +39,8 @@ class Encoder(nn.Module):
         n_features: int,
         extra_layers: int = 0,
         add_final_conv_layer: bool = True,
+        kernel_size: int = 4,
+        stride: int = 2,
     ) -> None:
         super().__init__()
 
@@ -48,7 +50,7 @@ class Encoder(nn.Module):
             nn.Conv2d(
                 num_input_channels,
                 n_features,
-                kernel_size=4,
+                kernel_size=kernel_size,
                 stride=2,
                 padding=4,
                 bias=False,
@@ -94,7 +96,7 @@ class Encoder(nn.Module):
                 nn.Conv2d(
                     in_features,
                     out_features,
-                    kernel_size=4,
+                    kernel_size=kernel_size,
                     stride=2,
                     padding=1,
                     bias=False,
@@ -114,7 +116,7 @@ class Encoder(nn.Module):
             self.final_conv_layer = nn.Conv2d(
                 n_features,
                 latent_vec_size,
-                kernel_size=4,
+                kernel_size=kernel_size,
                 stride=1,
                 padding=0,
                 bias=False,
@@ -151,6 +153,7 @@ class Decoder(nn.Module):
         num_input_channels: int,
         n_features: int,
         extra_layers: int = 0,
+        kernel_size: int = 4,
     ) -> None:
         super().__init__()
 
@@ -166,7 +169,7 @@ class Decoder(nn.Module):
             nn.ConvTranspose2d(
                 latent_vec_size,
                 n_input_features,
-                kernel_size=4,
+                kernel_size=kernel_size,
                 stride=1,
                 padding=0,
                 bias=False,
@@ -189,7 +192,7 @@ class Decoder(nn.Module):
                 nn.ConvTranspose2d(
                     in_features,
                     out_features,
-                    kernel_size=4,
+                    kernel_size=kernel_size,
                     stride=2,
                     padding=1,
                     bias=False,
@@ -234,7 +237,7 @@ class Decoder(nn.Module):
             nn.ConvTranspose2d(
                 n_input_features,
                 num_input_channels,
-                kernel_size=4,
+                kernel_size=kernel_size,
                 stride=2,
                 padding=1,
                 bias=False,
@@ -269,9 +272,17 @@ class Discriminator(nn.Module):
         num_input_channels: int,
         n_features: int,
         extra_layers: int = 0,
+        kernel_size: int = 4,
     ) -> None:
         super().__init__()
-        encoder = Encoder(input_size, 1, num_input_channels, n_features, extra_layers)
+        encoder = Encoder(
+            input_size,
+            1,
+            num_input_channels,
+            n_features,
+            extra_layers,
+            kernel_size=kernel_size,
+        )
         layers = []
         for block in encoder.children():
             if isinstance(block, nn.Sequential):
@@ -313,6 +324,7 @@ class Generator(nn.Module):
         n_features: int,
         extra_layers: int = 0,
         add_final_conv_layer: bool = True,
+        kernel_size: int = 4,
     ) -> None:
         super().__init__()
         self.encoder1 = Encoder(
@@ -322,9 +334,15 @@ class Generator(nn.Module):
             n_features,
             extra_layers,
             add_final_conv_layer,
+            kernel_size=kernel_size,
         )
         self.decoder = Decoder(
-            input_size, latent_vec_size, num_input_channels, n_features, extra_layers
+            input_size,
+            latent_vec_size,
+            num_input_channels,
+            n_features,
+            extra_layers,
+            kernel_size=kernel_size,
         )
         self.encoder2 = Encoder(
             input_size,
@@ -333,6 +351,7 @@ class Generator(nn.Module):
             n_features,
             extra_layers,
             add_final_conv_layer,
+            kernel_size=kernel_size,
         )
 
     def forward(self, input_tensor: Tensor) -> tuple[Tensor, Tensor, Tensor]:
@@ -363,6 +382,7 @@ class GanomalyModel(nn.Module):
         latent_vec_size: int,
         extra_layers: int = 0,
         add_final_conv_layer: bool = True,
+        kernel_size: int = 4,
     ) -> None:
         super().__init__()
         self.generator: Generator = Generator(
@@ -372,12 +392,14 @@ class GanomalyModel(nn.Module):
             n_features=n_features,
             extra_layers=extra_layers,
             add_final_conv_layer=add_final_conv_layer,
+            kernel_size=kernel_size,
         )
         self.discriminator: Discriminator = Discriminator(
             input_size=input_size,
             num_input_channels=num_input_channels,
             n_features=n_features,
             extra_layers=extra_layers,
+            kernel_size=kernel_size,
         )
         self.weights_init(self.generator)
         self.weights_init(self.discriminator)
