@@ -22,6 +22,7 @@ import pytorch_lightning as pl
 from model.ganomaly.loss import DiscriminatorLoss, GeneratorLoss
 
 from model.ganomaly.torch_model import GanomalyModel
+from model.ganomaly.custom_torch_model import CustomGanomalyModel
 
 logger = logging.getLogger(__name__)
 
@@ -60,15 +61,19 @@ class Ganomaly(pl.LightningModule):
         kernel_size: int = 4,
     ) -> None:
         super().__init__()
-        self.net: GanomalyModel = GanomalyModel(
-            input_size=input_size,
-            num_input_channels=1,
-            n_features=n_features,
-            latent_vec_size=latent_vec_size,
-            extra_layers=extra_layers,
-            add_final_conv_layer=add_final_conv_layer,
-            kernel_size=kernel_size,
+
+        self.net = CustomGanomalyModel(
+            input_size=input_size, latent_vec_size=latent_vec_size, channels_start=64
         )
+        # self.net: GanomalyModel = GanomalyModel(
+        #     input_size=input_size,
+        #     num_input_channels=1,
+        #     n_features=n_features,
+        #     latent_vec_size=latent_vec_size,
+        #     extra_layers=extra_layers,
+        #     add_final_conv_layer=add_final_conv_layer,
+        #     kernel_size=kernel_size,
+        # )
         self.real_label = torch.ones(size=(batch_size,), dtype=torch.float32)
         self.fake_label = torch.zeros(size=(batch_size,), dtype=torch.float32)
 
