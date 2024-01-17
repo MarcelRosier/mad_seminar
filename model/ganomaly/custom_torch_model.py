@@ -33,44 +33,47 @@ class Encoder(nn.Module):
     ) -> None:
         super().__init__()
 
-        self.layers = nn.Sequential(
-            nn.Conv2d(1, channels_start, kernel_size=3, stride=2, padding=1),
-            nn.BatchNorm2d(channels_start),
-            nn.ReLU(),
-            nn.Conv2d(
-                channels_start, channels_start * 2, kernel_size=3, stride=2, padding=1
-            ),
-            nn.BatchNorm2d(channels_start * 2),
-            nn.ReLU(),
-            nn.Conv2d(
-                channels_start * 2,
-                channels_start * 4,
-                kernel_size=3,
-                stride=2,
-                padding=1,
-            ),
-            nn.BatchNorm2d(channels_start * 4),
-            nn.ReLU(),
-        )
+        layers = []
+
+        channels = [
+            1,
+            channels_start,
+            channels_start * 2,
+            channels_start * 3,
+            channels_start * 4,
+            channels_start * 5,
+        ]
+        for i in range(1, len(channels)):
+            layers.extend(
+                self.conv_block_stride(
+                    channels_in=(channels[i - 1]),
+                    channels_out=channels[i],
+                    stride=1,
+                )
+            )
+            layers.extend(self.conv_block_stride(channels[i], channels[i], 1))
+            layers.extend(self.conv_block_stride(channels[i], channels[i], 2))
+
+        self.layers = nn.Sequential(*layers)
 
         self.fc = nn.Sequential(
             nn.Flatten(),
+            nn.Dropout(0.1),
             nn.Linear(
                 self.calculate_conv_output_size(input_size),
                 latent_vec_size,
             ),
         )
 
-    # def conv_block_stride(self, channels_in, channels_out):
-    #     block = nn.Sequential(
-    #         nn.Conv2d(channels_in, channels_out, kernel_size=3, stride=2, padding=1),
-    #         nn.BatchNorm2d(channels_out),
-    #         nn.ReLU(),
-    #     )
-    #     return block
-
-    # def conv_block_maxpool(self, channels_in, channels_out):
-    #     pass
+    def conv_block_stride(self, channels_in, channels_out, stride):
+        block = [
+            nn.Conv2d(
+                channels_in, channels_out, kernel_size=3, stride=stride, padding=1
+            ),
+            nn.BatchNorm2d(channels_out),
+            nn.LeakyReLU(0.1),
+        ]
+        return block
 
     def calculate_conv_output_size(self, input_size):
         # Function to calculate the size of the linear layer input after convolutional layers
@@ -110,46 +113,59 @@ class Decoder(nn.Module):
             conv_input_shape[0] * conv_input_shape[1] * conv_input_shape[2]
         )
         self.layers = nn.Sequential(
+            nn.Dropout(0.1),
             nn.Linear(latent_vec_size, conv_input_size),
             nn.BatchNorm1d(conv_input_size),
             nn.ReLU(),
             nn.Unflatten(1, conv_input_shape),
         )
 
-        self.convs = nn.Sequential(
-            nn.Sequential(
-                nn.ConvTranspose2d(
-                    channels_start * 4,
-                    channels_start * 2,
-                    kernel_size=3,
-                    stride=2,
-                    padding=1,
-                    output_padding=1,
-                ),
-                nn.BatchNorm2d(channels_start * 2),
-                nn.ReLU(),
-                nn.ConvTranspose2d(
-                    channels_start * 2,
-                    channels_start,
-                    kernel_size=3,
-                    stride=2,
-                    padding=1,
-                    output_padding=1,
-                ),
-                nn.BatchNorm2d(channels_start),
-                nn.ReLU(),
-                nn.ConvTranspose2d(
-                    channels_start,
-                    1,
-                    kernel_size=3,
-                    stride=2,
-                    padding=1,
-                    output_padding=1,
-                ),
-            )
-        )
+        convs = []
 
+        channels = [
+            channels_start * 5,
+            channels_start * 4,
+            channels_start * 3,
+            channels_start * 2,
+            channels_start,
+            1,
+        ]
+        for i in range(1, len(channels)):
+            convs.extend(
+                self.transposed_conv_block_stride(
+                    channels_in=(channels[i - 1]), channels_out=channels[i], stride=2
+                )
+            )
+            convs.extend(self.conv_block_stride(channels[i], channels[i], 1))
+            convs.extend(self.conv_block_stride(channels[i], channels[i], 1))
+
+        self.convs = nn.Sequential(*convs)
         self.tanh = nn.Tanh()
+
+    def transposed_conv_block_stride(self, channels_in, channels_out, stride=2):
+        block = [
+            nn.ConvTranspose2d(
+                channels_in,
+                channels_out,
+                kernel_size=3,
+                stride=stride,
+                padding=1,
+                output_padding=1,
+            ),
+            nn.BatchNorm2d(channels_out),
+            nn.LeakyReLU(0.1),
+        ]
+        return block
+
+    def conv_block_stride(self, channels_in, channels_out, stride=2):
+        block = [
+            nn.Conv2d(
+                channels_in, channels_out, kernel_size=3, stride=stride, padding=1
+            ),
+            nn.BatchNorm2d(channels_out),
+            nn.LeakyReLU(0.1),
+        ]
+        return block
 
     def forward(self, input_tensor: Tensor) -> Tensor:
         """Return generated image."""
