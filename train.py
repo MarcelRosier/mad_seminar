@@ -20,7 +20,7 @@ train_data_module = TrainDataModule(
     split_dir=config["split_dir"],
     target_size=config["target_size"],
     batch_size=config["batch_size"],
-    debug=True,
+    # debug=True,
 )
 
 # Init model

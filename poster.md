@@ -6,3 +6,7 @@
 - reconstruction comparison
 - explain shortcomings
 - compare capabilities (GANomaly shitty lol)
+
+
+ - Note: width = anoamly in my model??
+ - test more regularization

@@ -49,12 +49,14 @@ class GanomalyEvaluator:
                     images = batch
                 # Assuming your model has a detect_anomaly method
                 result = self.model.detect_anomaly(images)
-                anomaly_scores.extend(result["anomaly_score"].cpu().detach().numpy())
+                batch_scores = result["anomaly_score"].cpu().detach().numpy()
+                anomaly_scores.extend(batch_scores)
                 ## store reconstructions
                 input_reconstructions_tuples.extend(
                     zip(
                         images.cpu().detach().numpy(),
                         result["reconstruction"].cpu().detach().numpy(),
+                        batch_scores,
                     ),
                 )
 
@@ -82,15 +84,15 @@ class GanomalyEvaluator:
         """
         input_reconstructions_tuples = self.label_in_rec_dict[label]
         for i in range(n):
-            input_img, reconstruction_img = input_reconstructions_tuples[i]
+            input_img, reconstruction_img, score = input_reconstructions_tuples[i]
             fig, ax = plt.subplots(1, 3)
             ax[0].imshow(input_img.transpose(1, 2, 0), cmap="gray")
-            ax[0].set_title("Input")
+            # ax[0].set_title("Input")
             ax[1].imshow(reconstruction_img.transpose(1, 2, 0), cmap="gray")
-            ax[1].set_title("Reconstruction")
+            ax[1].set_title(f"Score {score:.3f}")
             diff = input_img - reconstruction_img
             ax[2].imshow(diff.transpose(1, 2, 0), cmap="plasma_r")
-            ax[2].set_title("Difference")
+            # ax[2].set_title("")
             plt.show()
 
     def get_merged_abnormal_scores(self):

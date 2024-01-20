@@ -83,7 +83,7 @@ class TrainDataModule(pl.LightningDataModule):
         self.val_data = val_files
 
         if debug:
-            debug_samples = 100
+            debug_samples = 4
             self.train_data = self.train_data[:debug_samples]
             self.val_data = self.val_data[:debug_samples]
 
@@ -104,14 +104,14 @@ class TrainDataModule(pl.LightningDataModule):
             [
                 transforms.Normalize((MEAN,), (STD,)),
                 # transforms.RandomHorizontalFlip(0.1),
-                # monai_transforms.RandAffine(
-                #     prob=0.1,
-                #     spatial_size=target_size,
-                #     translate_range=(4, 4),
-                #     rotate_range=(np.pi / 36, np.pi / 36),
-                #     scale_range=(0.1, 0.1),
-                #     padding_mode="border",
-                # ),
+                monai_transforms.RandAffine(
+                    prob=0.1,
+                    spatial_size=target_size,
+                    translate_range=(4, 4),
+                    rotate_range=(np.pi / 36, np.pi / 36),
+                    scale_range=(0.1, 0.1),
+                    padding_mode="border",
+                ),
             ]
         )
 
