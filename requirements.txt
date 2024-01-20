@@ -2,7 +2,7 @@ matplotlib
 pandas
 torch
 torchvision
-pytorch-lightning
+pytorch-lightning==1.9.5
 tensorboard
 torch_tb_profiler
 ipykernel
@@ -11,3 +11,6 @@ opencv-python
 plotly
 scikit-image
 nbformat
+monai
+seaborn
+wandb
