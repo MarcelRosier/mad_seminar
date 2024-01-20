@@ -20,14 +20,15 @@ train_data_module = TrainDataModule(
     split_dir=config["split_dir"],
     target_size=config["target_size"],
     batch_size=config["batch_size"],
+    debug=True,
 )
 
 # Init model
-# model = get_model(config)
+model = get_model(config)
 
 # model = Ganomaly(
 #     batch_size=32,
-#     input_size=(128, 128),
+#     input_size=(64, 64),
 #     latent_vec_size=100,
 #     wadv=1,
 #     wcon=50,
@@ -37,18 +38,18 @@ train_data_module = TrainDataModule(
 #     beta2=0.999,
 # )
 
-##! Custom
-model = Ganomaly(
-    batch_size=config["batch_size"],
-    input_size=(64, 64),
-    latent_vec_size=config["latent_vec_size"],
-    wadv=1,
-    wcon=50,
-    wenc=1,
-    lr=config["lr"],
-    beta1=0.5,
-    beta2=0.999,
-)
+# ##! Custom
+# model = Ganomaly(
+#     batch_size=config["batch_size"],
+#     input_size=(64, 64),
+#     latent_vec_size=config["latent_vec_size"],
+#     wadv=1,
+#     wcon=50,
+#     wenc=1,
+#     lr=config["lr"],
+#     beta1=0.5,
+#     beta2=0.999,
+# )
 
 # from torchsummary import summary
 

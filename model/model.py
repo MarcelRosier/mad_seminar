@@ -23,7 +23,6 @@ def get_model(config):
             wadv=config["wadv"],
             wcon=config["wcon"],
             wenc=config["wenc"],
-            kernel_size=config["kernel_size"],
         )
     else:
         raise ValueError(f"Unknown model name {config['model_name']}")

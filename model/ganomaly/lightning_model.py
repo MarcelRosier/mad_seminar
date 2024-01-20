@@ -62,18 +62,18 @@ class Ganomaly(pl.LightningModule):
     ) -> None:
         super().__init__()
 
-        self.net = CustomGanomalyModel(
-            input_size=input_size, latent_vec_size=latent_vec_size, channels_start=64
-        )
-        # self.net: GanomalyModel = GanomalyModel(
-        #     input_size=input_size,
-        #     num_input_channels=1,
-        #     n_features=n_features,
-        #     latent_vec_size=latent_vec_size,
-        #     extra_layers=extra_layers,
-        #     add_final_conv_layer=add_final_conv_layer,
-        #     kernel_size=kernel_size,
+        # self.net = CustomGanomalyModel(
+        #     input_size=input_size, latent_vec_size=latent_vec_size, channels_start=64
         # )
+        self.net: GanomalyModel = GanomalyModel(
+            input_size=input_size,
+            num_input_channels=1,
+            n_features=n_features,
+            latent_vec_size=latent_vec_size,
+            extra_layers=extra_layers,
+            add_final_conv_layer=add_final_conv_layer,
+            kernel_size=kernel_size,
+        )
         self.real_label = torch.ones(size=(batch_size,), dtype=torch.float32)
         self.fake_label = torch.zeros(size=(batch_size,), dtype=torch.float32)
 
@@ -118,10 +118,10 @@ class Ganomaly(pl.LightningModule):
             betas=(self.beta1, self.beta2),
         )
         scheduler_d = torch.optim.lr_scheduler.ExponentialLR(
-            optimizer_d, gamma=0.98, verbose=True
+            optimizer_d, gamma=0.995, verbose=True
         )
         scheduler_g = torch.optim.lr_scheduler.ExponentialLR(
-            optimizer_g, gamma=0.98, verbose=True
+            optimizer_g, gamma=0.995, verbose=True
         )
 
         return [optimizer_d, optimizer_g], [scheduler_d, scheduler_g]

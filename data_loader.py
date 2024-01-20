@@ -9,8 +9,8 @@ from torchvision import transforms
 from monai import transforms as monai_transforms
 import numpy as np
 
-MEAN = 0
-STD = 1
+MEAN = 0.5
+STD = 0.5
 
 
 class TrainDataset(Dataset):
@@ -48,7 +48,13 @@ class TrainDataset(Dataset):
 
 
 class TrainDataModule(pl.LightningDataModule):
-    def __init__(self, split_dir: str, target_size=(128, 128), batch_size: int = 32):
+    def __init__(
+        self,
+        split_dir: str,
+        target_size=(128, 128),
+        batch_size: int = 32,
+        debug: bool = False,
+    ):
         """
         Data module for training
 
@@ -76,28 +82,36 @@ class TrainDataModule(pl.LightningDataModule):
         self.train_data = train_files_ixi + train_files_fastMRI
         self.val_data = val_files
 
+        if debug:
+            debug_samples = 100
+            self.train_data = self.train_data[:debug_samples]
+            self.val_data = self.val_data[:debug_samples]
+
         # print(f"{self.train_data}")
         # print(f"{self.val_data}")
 
         # Logging
-        print(
-            f"Using {len(train_files_ixi)} IXI images "
-            f"and {len(train_files_fastMRI)} fastMRI images for training. "
-            f"Using {len(val_files)} images for validation."
-        )
+        if debug:
+            print(f"using {len(self.train_data)} images for training")
+        else:
+            print(
+                f"Using {len(train_files_ixi)} IXI images "
+                f"and {len(train_files_fastMRI)} fastMRI images for training. "
+                f"Using {len(val_files)} images for validation."
+            )
 
         self.transforms = transforms.Compose(
             [
                 transforms.Normalize((MEAN,), (STD,)),
-                transforms.RandomHorizontalFlip(0.1),
-                monai_transforms.RandAffine(
-                    prob=0.1,
-                    spatial_size=target_size,
-                    translate_range=(4, 4),
-                    rotate_range=(np.pi / 36, np.pi / 36),
-                    scale_range=(0.1, 0.1),
-                    padding_mode="border",
-                ),
+                # transforms.RandomHorizontalFlip(0.1),
+                # monai_transforms.RandAffine(
+                #     prob=0.1,
+                #     spatial_size=target_size,
+                #     translate_range=(4, 4),
+                #     rotate_range=(np.pi / 36, np.pi / 36),
+                #     scale_range=(0.1, 0.1),
+                #     padding_mode="border",
+                # ),
             ]
         )
 

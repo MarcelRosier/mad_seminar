@@ -83,11 +83,14 @@ class GanomalyEvaluator:
         input_reconstructions_tuples = self.label_in_rec_dict[label]
         for i in range(n):
             input_img, reconstruction_img = input_reconstructions_tuples[i]
-            fig, ax = plt.subplots(1, 2)
+            fig, ax = plt.subplots(1, 3)
             ax[0].imshow(input_img.transpose(1, 2, 0), cmap="gray")
             ax[0].set_title("Input")
             ax[1].imshow(reconstruction_img.transpose(1, 2, 0), cmap="gray")
             ax[1].set_title("Reconstruction")
+            diff = input_img - reconstruction_img
+            ax[2].imshow(diff.transpose(1, 2, 0), cmap="plasma_r")
+            ax[2].set_title("Difference")
             plt.show()
 
     def get_merged_abnormal_scores(self):

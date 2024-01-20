@@ -23,7 +23,7 @@ class GeneratorLoss(nn.Module):
 
         self.loss_enc = nn.SmoothL1Loss()
         self.loss_adv = nn.MSELoss()
-        self.loss_con = nn.MSELoss()  # nn.L1Loss()
+        self.loss_con = nn.L1Loss()
         self.wadv = wadv
         self.wcon = wcon
         self.wenc = wenc
