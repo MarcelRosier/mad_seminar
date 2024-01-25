@@ -2,10 +2,10 @@
 
 
 - basic model ideas and how they differ, architecture sketch
-- AUROC PRC plots and number comparison
+- AUROC/ PRC plots
 - reconstruction comparison
-- explain shortcomings
-- compare capabilities (GANomaly shitty lol)
+- localization comparison (mine doesnt ahve that but  think yours?)
+- attempt to explain shortcomings and strengths
 
 
  - Note: width = anoamly in my model??

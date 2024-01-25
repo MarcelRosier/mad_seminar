@@ -11,7 +11,7 @@ https://arxiv.org/abs/1805.06725
 
 
 import logging
-
+import numpy as np
 import torch
 from pytorch_lightning.callbacks import Callback, EarlyStopping
 from pytorch_lightning.utilities.types import STEP_OUTPUT  # ,EPOCH_OUTPUT
@@ -214,9 +214,12 @@ class Ganomaly(pl.LightningModule):
     def detect_anomaly(self, x: Tensor):
         _, fake, latent_i, latent_o = self.net(x)
         anomaly_score = torch.mean(torch.pow((latent_i - latent_o), 2), dim=1).view(-1)
+
+        x = x.detach().cpu().numpy()
+        fake = fake.detach().cpu().numpy()
         return {
             "reconstruction": fake,
-            "anomaly_map": torch.abs(x - fake),
+            "anomaly_map": np.abs(x - fake),
             "latent_i": latent_i,
             "latent_o": latent_o,
             "anomaly_score": anomaly_score,

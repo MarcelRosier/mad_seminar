@@ -55,7 +55,7 @@ class GanomalyEvaluator:
                 input_reconstructions_tuples.extend(
                     zip(
                         images.cpu().detach().numpy(),
-                        result["reconstruction"].cpu().detach().numpy(),
+                        result["reconstruction"],
                         batch_scores,
                     ),
                 )
@@ -90,8 +90,8 @@ class GanomalyEvaluator:
             # ax[0].set_title("Input")
             ax[1].imshow(reconstruction_img.transpose(1, 2, 0), cmap="gray")
             ax[1].set_title(f"Score {score:.3f}")
-            diff = input_img - reconstruction_img
-            ax[2].imshow(diff.transpose(1, 2, 0), cmap="plasma_r")
+            diff = np.abs(input_img - reconstruction_img)
+            ax[2].imshow(diff.transpose(1, 2, 0), cmap="plasma")
             # ax[2].set_title("")
             plt.show()
 
