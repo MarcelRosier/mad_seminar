@@ -198,7 +198,52 @@ class PosterDataset(Dataset):
             img = self.applytransforms(img)
             # pos and neg also?
 
-        return img, pos_mask, neg_mask
+        return img, pos_mask, neg_mask, idx
+
+
+class PosterNormalDataset(Dataset):
+    def __init__(
+        self,
+        img_paths: List[str],
+        target_size=(128, 128),
+        applytransforms=None,
+    ):
+        """
+        Loads anomalous images, their positive masks and negative masks from data_dir
+
+        @param img_csv: str
+            path to csv file containing filenames to the images
+        @param img_csv: str
+            path to csv file containing filenames to the positive masks
+        @param img_csv: str
+            path to csv file containing filenames to the negative masks
+        @param: target_size: tuple (int, int), default: (128, 128)
+            the desired output size
+        """
+        super(PosterNormalDataset, self).__init__()
+        self.target_size = target_size
+        self.img_paths = img_paths
+        self.applytransforms = applytransforms
+
+        if self.applytransforms is None:
+            self.applytransforms = transforms.Compose(
+                [transforms.Normalize((MEAN,), (STD,))]
+            )
+
+    def __len__(self):
+        return len(self.img_paths)
+
+    def __getitem__(self, idx):
+        # Load image
+        img = Image.open(self.img_paths[idx]).convert("L")
+        img = img.resize(self.target_size, Image.BICUBIC)
+        img = transforms.ToTensor()(img)
+
+        if self.applytransforms:
+            img = self.applytransforms(img)
+            # pos and neg also?
+
+        return img, idx
 
 
 class TestDataset(Dataset):
@@ -369,11 +414,10 @@ def get_train_dataloader(split_dir: str, target_size: Tuple[int, int], batch_siz
             transforms.Normalize((MEAN,), (STD,)),
             # transforms.RandomHorizontalFlip(),
             monai_transforms.RandAffine(
-                prob=0.5,
+                prob=0.3,
                 spatial_size=target_size,
-                translate_range=(4, 4),
                 rotate_range=(np.pi / 36, np.pi / 36),
-                scale_range=(0.1, 0.1),
+                scale_range=((0, 0.2), (0, 0.05)),
                 padding_mode="border",
             ),
         ]

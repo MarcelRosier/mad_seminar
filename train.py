@@ -22,7 +22,7 @@ train_data_module = TrainDataModule(
     batch_size=config["batch_size"],
     # debug=True,
 )
-
+print(train_data_module)
 # Init model
 model = get_model(config)
 

@@ -38,10 +38,12 @@ class GanomalyEvaluator:
             normalize (bool): normalize the scores
         """
         self.label_score_dict = {}
+        self.label_latent_dict = {}
         self.label_in_rec_dict = {}
         for label, dataloader in self.dataloaders.items():
             anomaly_scores = []
             input_reconstructions_tuples = []
+            latent_i = []
             for batch in dataloader:
                 if len(batch) == 3:
                     images, _, _ = batch
@@ -51,6 +53,8 @@ class GanomalyEvaluator:
                 result = self.model.detect_anomaly(images)
                 batch_scores = result["anomaly_score"].cpu().detach().numpy()
                 anomaly_scores.extend(batch_scores)
+                batch_latent_i = result["latent_i"].cpu().detach().numpy()
+                latent_i.extend(batch_latent_i)
                 ## store reconstructions
                 input_reconstructions_tuples.extend(
                     zip(
@@ -62,9 +66,13 @@ class GanomalyEvaluator:
 
             self.label_score_dict[label] = anomaly_scores
             self.label_in_rec_dict[label] = input_reconstructions_tuples
+            self.label_latent_dict[label] = latent_i
 
         if normalize:
             self.normalize_scores()
+
+    def plot_latent_space(self, label):
+        pass
 
     def normalize_scores(self):
         # normalize each array based on the min and max of all arrays
@@ -206,7 +214,7 @@ class GanomalyEvaluator:
         labels, scores = self.get_labeled_scores()
         return roc_auc_score(labels, scores)
 
-    def plot_auroc(self):
+    def plot_auroc(self, save_fig: bool = False):
         labels, scores = self.get_labeled_scores()
 
         fpr, tpr, _ = roc_curve(labels, scores)
@@ -217,21 +225,24 @@ class GanomalyEvaluator:
         plt.plot(
             fpr,
             tpr,
-            color="darkorange",
+            color="#ee6c4d",
             lw=lw,
-            label=f"ROC curve (area = {roc_auc:.2f})",
+            label=f"GANomaly (area = {roc_auc:.2f})",
         )
-        plt.plot([0, 1], [0, 1], color="navy", lw=lw, linestyle="--")
+        plt.plot([0, 1], [0, 1], color="#3d5a80", lw=lw, linestyle="--")
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
 
         plt.xlabel("False Positive Rate")
         plt.ylabel("True Positive Rate")
-        plt.title("Receiver operating characteristic example")
+        plt.title("Image level AUROC")
         plt.legend(loc="lower right")
+
+        if save_fig:
+            plt.savefig("ganomaly_auroc.png", dpi=500)
         plt.show()
 
-    def plot_auprc(self):
+    def plot_auprc(self, save_fig: bool = False):
         labels, scores = self.get_labeled_scores()
         precision, recall, _ = precision_recall_curve(labels, scores)
         # print(f"Precision: {precision}, Recall: {recall}")
@@ -242,17 +253,19 @@ class GanomalyEvaluator:
         plt.plot(
             recall,
             precision,
-            color="darkorange",
+            color="#ee6c4d",
             lw=lw,
-            label=f"PR curve (area = {auprc:.2f})",
+            label=f"GANomaly (area = {auprc:.2f})",
         )
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
 
         plt.xlabel("Recall")
         plt.ylabel("Precision")
-        plt.title("Precision-Recall curve")
+        plt.title("Image level Precision-Recall curve")
         plt.legend(loc="lower right")
+        if save_fig:
+            plt.savefig("ganomaly_auprc.png", dpi=500)
         plt.show()
 
     def prc_auc_score(self):
