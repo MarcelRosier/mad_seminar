@@ -50,9 +50,9 @@ class Encoder(nn.Module):
             nn.Conv2d(
                 num_input_channels,
                 n_features,
-                kernel_size=3,
+                kernel_size=kernel_size,
                 stride=2,
-                padding=1,
+                padding=4,
                 bias=False,
             ),
         )
@@ -96,7 +96,7 @@ class Encoder(nn.Module):
                 nn.Conv2d(
                     in_features,
                     out_features,
-                    kernel_size=3,
+                    kernel_size=kernel_size,
                     stride=2,
                     padding=1,
                     bias=False,
@@ -116,7 +116,7 @@ class Encoder(nn.Module):
             self.final_conv_layer = nn.Conv2d(
                 n_features,
                 latent_vec_size,
-                kernel_size=3,
+                kernel_size=kernel_size,
                 stride=1,
                 padding=0,
                 bias=False,
@@ -124,13 +124,10 @@ class Encoder(nn.Module):
 
     def forward(self, input_tensor: Tensor) -> Tensor:
         """Return latent vectors."""
-        print("intiial ", input_tensor.shape)
+
         output = self.input_layers(input_tensor)
-        print("in", output.shape)
         output = self.extra_layers(output)
-        print("xttra:", output.shape)
         output = self.pyramid_features(output)
-        print("py:", output.shape)
         if self.final_conv_layer is not None:
             output = self.final_conv_layer(output)
 
@@ -172,7 +169,7 @@ class Decoder(nn.Module):
             nn.ConvTranspose2d(
                 latent_vec_size,
                 n_input_features,
-                kernel_size=3,
+                kernel_size=kernel_size,
                 stride=1,
                 padding=0,
                 bias=False,
@@ -195,7 +192,7 @@ class Decoder(nn.Module):
                 nn.ConvTranspose2d(
                     in_features,
                     out_features,
-                    kernel_size=3,
+                    kernel_size=kernel_size,
                     stride=2,
                     padding=1,
                     bias=False,
@@ -240,7 +237,7 @@ class Decoder(nn.Module):
             nn.ConvTranspose2d(
                 n_input_features,
                 num_input_channels,
-                kernel_size=3,
+                kernel_size=kernel_size,
                 stride=2,
                 padding=1,
                 bias=False,
@@ -359,13 +356,9 @@ class Generator(nn.Module):
 
     def forward(self, input_tensor: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         """Return generated image and the latent vectors."""
-
         latent_i = self.encoder1(input_tensor)
-        print("latent i: ", latent_i.shape)
         gen_image = self.decoder(latent_i)
-        print("GEN: ", gen_image.shape)
         latent_o = self.encoder2(gen_image)
-        print("latent o: ", latent_o.shape)
         return gen_image, latent_i, latent_o
 
 
