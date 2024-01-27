@@ -1,39 +1,25 @@
-# Master Seminar - Unsupervised Anomaly Segmentation
+# Master Seminar - Unsupervised Anomaly Segmentation - GANomaly
 
-This repository contains the PyTorch dataloader classes and an evaluation script
-to be used for the implementation of your models.
-It also contains an example model and trainer, a simple Autoencoder that can be
-used as a starting point for your projects.
-
-[![Open Demo In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/compai-lab/mad_seminar_s23/blob/main/main.ipynb)
+This repository contains the seminar work to apply the GANomaly model to a Brain MRI dataset
 
 ## Installation
+No time , shoot your shot at the requirements.txt file but might be broken
 
-### When on your local machine
+## Content
+- model/ganomaly:
+    ```
+    ganomaly
+    ┣ custom_torch_model.py - test adpations of the provided codebase, i.e different DCGAN
+    ┣ lightning_model.py - pl class
+    ┣ loss.py - enc,adv,con loss
+    ┣ torch_model.py - optimized code based on the anomalib implementation
+    ┣ torch_model_k3.py - adaption tests
+    ┗ utils.py
+    ```
+- Evaluation:
+    - ganomaly_eval.py - Eval class tho compute metrics & visualizations 
+    - run_eval.ipynb - Notebook that uses the previous functionality
+    - poster.ipynb - Additional visualizations for the poster
 
-Clone this repository
-```shell
-git clone https://github.com/compai-lab/mad_seminar_ws23.git
-```
 
-Create (and activate) a new virtual environment (requires conda)
-```shell
-conda create --name mad python=3.9
-conda activate mad
-```
 
-Install the required packages
-```shell
-cd mad_seminar_ws23
-python -m pip install -r requirements.txt
-```
-
-Download and extract the data
-```shell
-wget <link you got from your supervisor>
-unzip data.zip
-```
-
-### When in Google Colab
-
-Simply follow the instructions in `main.ipynb`
