@@ -117,13 +117,23 @@ class GanomalyEvaluator:
         Args:
             eval_type (EvalType): the type of evaluation to plot the histogram for
         """
+        plt.figure(figsize=(8, 6))
+
         if eval_type == EvalType.MERGED:
             # plot normal
             sns.histplot(
-                self.label_score_dict["normal"], bins=BINS, kde=True, label="normal"
+                self.label_score_dict["normal"],
+                bins=BINS,
+                kde=True,
+                label="normal",
+                color="#3d5a80",
             )
             sns.histplot(
-                self.get_merged_abnormal_scores(), bins=BINS, kde=True, label="abnormal"
+                self.get_merged_abnormal_scores(),
+                bins=BINS,
+                kde=True,
+                label="abnormal",
+                color="#ee6c4d",
             )
         elif eval_type == EvalType.NORMAL:
             sns.histplot(
