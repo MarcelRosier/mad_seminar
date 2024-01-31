@@ -3,7 +3,8 @@
 This repository contains the seminar work to apply the GANomaly model to a Brain MRI dataset
 
 ## Installation
-No time , shoot your shot at the requirements.txt file but might be broken
+- No time , shoot your shot at the requirements.txt file but might be broken
+- Check https://github.com/openvinotoolkit/anomalib/tree/main/src/anomalib/models/image/ganomaly for the key dependencies
 
 ## Content
 - model/ganomaly:
