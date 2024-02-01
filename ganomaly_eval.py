@@ -214,7 +214,6 @@ class GanomalyEvaluator:
     def get_labeled_scores(self):
         labels = []
         scores = []
-
         for pathology, anomaly_scores in self.label_score_dict.items():
             if pathology in ["normal"]:
                 labels.extend([0] * len(anomaly_scores))
@@ -240,20 +239,20 @@ class GanomalyEvaluator:
             tpr,
             color="#ee6c4d",
             lw=lw,
-            label=f"GANomaly (area = {roc_auc:.2f})",
+            label=f"GANomaly (Image level) = {roc_auc:.2f}",
         )
-        plt.plot([0, 1], [0, 1], color="#3d5a80", lw=lw, linestyle="--")
+        plt.plot([0, 1], [0, 1], color="#293241", lw=lw, linestyle="--")
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
 
         plt.xlabel("False Positive Rate")
         plt.ylabel("True Positive Rate")
-        plt.title("Image level AUROC")
+        plt.title("Receiver operating characteristic curve")
         plt.legend(loc="lower right")
 
         if save_fig:
             plt.savefig("ganomaly_auroc.png", dpi=500)
-        plt.show()
+        # plt.show()
 
     def plot_auprc(self, save_fig: bool = False):
         labels, scores = self.get_labeled_scores()
@@ -268,18 +267,18 @@ class GanomalyEvaluator:
             precision,
             color="#ee6c4d",
             lw=lw,
-            label=f"GANomaly (area = {auprc:.2f})",
+            label=f"GANomaly (Image level) = {auprc:.2f}",
         )
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
 
         plt.xlabel("Recall")
         plt.ylabel("Precision")
-        plt.title("Image level Precision-Recall curve")
+        plt.title("Precision-Recall curve")
         plt.legend(loc="lower right")
         if save_fig:
             plt.savefig("ganomaly_auprc.png", dpi=500)
-        plt.show()
+        # plt.show()
 
     def prc_auc_score(self):
         labels, scores = self.get_labeled_scores()
