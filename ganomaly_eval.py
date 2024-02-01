@@ -38,12 +38,14 @@ class GanomalyEvaluator:
             normalize (bool): normalize the scores
         """
         self.label_score_dict = {}
-        self.label_latent_dict = {}
+        self.label_latent_i_dict = {}
+        self.label_latent_o_dict = {}
         self.label_in_rec_dict = {}
         for label, dataloader in self.dataloaders.items():
             anomaly_scores = []
             input_reconstructions_tuples = []
             latent_i = []
+            latent_o = []
             for batch in dataloader:
                 if len(batch) == 3:
                     images, _, _ = batch
@@ -53,8 +55,8 @@ class GanomalyEvaluator:
                 result = self.model.detect_anomaly(images)
                 batch_scores = result["anomaly_score"].cpu().detach().numpy()
                 anomaly_scores.extend(batch_scores)
-                batch_latent_i = result["latent_i"].cpu().detach().numpy()
-                latent_i.extend(batch_latent_i)
+                latent_i.extend(result["latent_i"].cpu().detach().numpy())
+                latent_o.extend(result["latent_o"].cpu().detach().numpy())
                 ## store reconstructions
                 input_reconstructions_tuples.extend(
                     zip(
@@ -66,7 +68,8 @@ class GanomalyEvaluator:
 
             self.label_score_dict[label] = anomaly_scores
             self.label_in_rec_dict[label] = input_reconstructions_tuples
-            self.label_latent_dict[label] = latent_i
+            self.label_latent_i_dict[label] = latent_i
+            self.label_latent_o_dict[label] = latent_o
 
         if normalize:
             self.normalize_scores()
